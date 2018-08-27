@@ -1,0 +1,139 @@
+<style lang="less">
+  .body{
+    background-color: #f0eff5;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+  }
+  .list{
+    position: relative;
+    display: flex;
+    background: #fff;
+    align-items: center;
+    padding: 15rpx 15rpx 12rpx 0rpx;
+  }
+  .list image{
+    width: 100rpx;
+    height: 100rpx;
+    border-radius: 10rpx;
+  }
+  .list text{
+    flex: 1;
+    padding-left: 20rpx;
+    font-size: 32rpx;
+  }
+  .border{
+    border-bottom: 1px solid #eee;
+  }
+  .msg_content{
+    padding-left: 26rpx;
+    background-color: #fff;
+    border-bottom: 1px solid #eee;
+  }
+  .msg_content .msg_name{
+    font-size: 32rpx;
+  }
+  .msg_content .msg_con{
+    font-size: 26rpx;
+    color: #999;
+    display: block;
+  }
+</style>
+<template>
+  <view class="body">
+    <view class="msg_content">
+      <view @tap="pageTap('{{item}}')" class="list border" wx:for="{{list}}" wx:key="index">
+        <image src="{{item.icon}}"/>
+        <view>
+          <Text class="msg_name">{{item.name}}</Text>
+          <Text class="msg_con">{{item.msg}}</Text>
+        </view>
+      </view>
+    </view>
+  </view>
+</template>
+<script>
+  import wepy from 'wepy'
+  import { connect } from 'wepy-redux'
+  import { Refresh } from '../store/actions'
+  import data from '../mocks/history'
+  @connect(
+    {
+      flg (state) {
+        return state.counter.flg
+      }
+    }, {
+      Refresh
+    }
+  )
+  export default class Index extends wepy.page {
+    config = {
+      navigationBarTitleText: '微信'
+    }
+    components = {
+    }
+    data = {
+      list: []
+    }
+    computed = {
+    }
+    methods = {
+      pageTap (item) {
+        let namePY = item.to === 'me' ? item.from : item.to
+        this.$navigate({url: `/pages/chat?name=${item.name}&namePY=${namePY}`})
+      }
+    }
+    watch = {
+      flg (newValue, oldValue) {
+        if (newValue) {
+          this.historyData()
+          this.methods.Refresh(false)
+        }
+      }
+    }
+    onLoad () {
+      // 获取缓存数据
+      this.historyData()
+    }
+    ProcesData (data) {
+      let list = []
+      let arr = []
+      for (let i in data) {
+        let name = data[i].name
+        if (arr.indexOf(name) < 0) {
+          arr.push(name)
+          let msg = data[i].msg
+          msg = msg.length > 15 ? `${msg.slice(0, 15)}...` : msg
+          data[i].msg = msg
+          list.push(data[i])
+        } else {
+          for (let j in list) {
+            if (list[j].name === data[i].name && list[j].time < data[i].time) {
+              let msg = data[i].msg
+              msg = msg.length > 15 ? `${msg.slice(0, 15)}...` : msg
+              data[i].msg = msg
+              list.splice(j, 1, data[i])
+            }
+          }
+        }
+      }
+      list.sort(function (x, y) {
+        return y.time - x.time
+      })
+      this.list = list
+    }
+    historyData () {
+      let value = wepy.getStorageSync('Record')
+      if (!value) {
+        this.ProcesData(data)
+        wepy.setStorageSync('Record', JSON.stringify(data))
+      } else {
+        value = JSON.parse(value)
+        // 处理数据格式
+        this.ProcesData(value)
+      }
+    }
+  }
+</script>

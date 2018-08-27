@@ -1,0 +1,217 @@
+<style lang="less">
+  .body{
+    background-color: #ebebeb;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+  }
+  .fixBottom{
+    position: fixed;
+    padding: 10rpx 10rpx;
+    border-top: 1px solid #d7d7d9;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 113rpx;
+    background-color: #ebebeb;
+    display: flex;
+    align-items: center;
+    image{
+      width: 70rpx;
+      height: 70rpx;
+      margin: 0 10rpx;
+    }
+    input{
+      flex: 1;
+      height: 80rpx;
+      padding: 10rpx;
+      font-size: 30rpx;
+      box-sizing: border-box;
+      background-color: #fff;
+      border: 1px solid #ddd;
+      border-radius: 10rpx;
+    }
+    button{
+      color: #fff;
+      height: 80rpx;
+      font-size: 30rpx;
+      line-height: 80rpx;
+      background-color:#a0e75a;
+    }
+  }
+  .chat_content{
+    padding: 26rpx 30rpx;
+    position:absolute;
+    left:0;
+    top:0;
+    right:0;
+    bottom:113rpx;
+    overflow-y:auto;
+  }
+  .chat_list{
+    display: flex;
+    margin-bottom: 40rpx;
+    .image{
+      width: 70rpx;
+      height: 70rpx;
+      image{
+        width: 100%;
+        height: 100%;
+      }
+    }
+    .content{
+      flex: 1;
+      padding-left: 15rpx;
+      .msg{
+        font-size: 32rpx;
+        min-width: 50rpx;
+        max-width: 60%;
+        padding: 12rpx 20rpx;
+        display: inline-block;
+        border-radius: 8rpx;
+        border: 1rpx solid #ccc;
+        background-color:#fff;
+      }
+    }
+  }
+  .chat_list.right{
+    display: block;
+    .image{
+      float: right;
+    }
+    text-align: right;
+    .content{
+      float: right;
+      padding: 0;
+      width: calc(100% - 15rpx);
+      padding-right: 15rpx;
+    }
+    .msg{
+      text-align: left;
+      border: 1rpx solid #6fb44d;
+      background-color:#a0e75a;
+    }
+  }
+  .chat_list.right::after{
+    content:'';
+    width: 0;
+    display: block;
+    visibility: hidden;
+    clear: both;
+  }
+</style>
+<template>
+  <view class="body">
+    <view class="chat_content">
+      <view class="chat_list {{item.from === 'me' ? ' right' : ''}}" wx:for="{{list}}" wx:key="index">
+        <view class="image">
+          <image src="{{item.icon}}" wx:if="{{item.from !== 'me'}}"/>
+          <!-- <image src="{{icon}}" wx:if="{{item.from === 'me'}}"/> -->
+          <open-data type="userAvatarUrl" wx:if="{{item.from === 'me'}}"></open-data>
+        </view>
+        <view class="content">
+          <view class="msg">
+            <Text>{{item.msg}}</Text>
+          </view>
+        </view>
+      </view>
+    </view>
+    <view class="fixBottom">
+      <image src="../images/voice.png"/>
+      <input type='text' @input="test" value="{{inputVal}}"/>
+      <image src="../images/face.png"/>
+      <image src="../images/plus.png"/>
+      <button @tap="submit">发 送</button>
+    </view>
+  </view>
+</template>
+<script>
+  import wepy from 'wepy'
+  import { connect } from 'wepy-redux'
+  import { Refresh } from '../store/actions'
+  import reply from '../mocks/reply'
+  
+  @connect(
+    {
+      flg (state) {
+        return state.counter.flg
+      }
+    }, {
+      Refresh
+    }
+  )
+  export default class Index extends wepy.page {
+    config = {
+      navigationBarTitleText: ''
+    }
+    components = {
+    }
+    data = {
+      icon: '',
+      name: '',
+      namePY: '',
+      list: [],
+      inputVal: ''
+    }
+    computed = {
+    }
+    methods = {
+      pageTap () {
+        this.$navigate({url: '../pages/login'})
+      },
+      submit () {
+        this.sendMSg('me', this.namePY, this.inputVal, true)
+        this.answer()
+      },
+      test (e) {
+        this.inputVal = e.detail.value
+      }
+    }
+    onLoad (option) {
+      this.name = option.name
+      this.namePY = option.namePY
+      // this.icon = this.$parent.globalData.userInfo.avatarUrl
+      wepy.setNavigationBarTitle({
+        title: option.name
+      })
+      this.ProcesData(option.name)
+    }
+    ProcesData (name) {
+      let value = wepy.getStorageSync('Record')
+      value = JSON.parse(value)
+      let list = []
+      for (let i in value) {
+        if (value[i].name === name) {
+          list.push(value[i])
+        }
+      }
+      this.list = list
+    }
+    // 发送消息
+    sendMSg (from, to, msg, flg) {
+      let list = this.list
+      let item = {from: from, to: to, name: this.name, icon: `../images/users/${this.namePY}.png`, type: 'text', msg: msg, time: Date.now()}
+      list.push(item)
+      if (flg) {
+        this.inputVal = ''
+      }
+      // 保存数据到本地
+      let value = wepy.getStorageSync('Record')
+      value = JSON.parse(value)
+      value.push(item)
+      wepy.setStorageSync('Record', JSON.stringify(value))
+      this.methods.Refresh(true)
+    }
+    // 回消息
+    answer () {
+      let arr = reply[`${this.namePY}`]
+      arr = arr !== undefined ? arr : reply.other
+      let len = arr.length
+      let index = Math.floor(Math.random() * len)
+      let msg = arr[index]
+      this.sendMSg(this.namePY, 'me', msg, false)
+    }
+  }
+</script>

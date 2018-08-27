@@ -1,0 +1,75 @@
+<style lang="less">
+.container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+}
+</style>
+
+<script>
+import wepy from 'wepy'
+import 'wepy-async-function'
+
+import { setStore } from 'wepy-redux'
+import configStore from './store'
+
+const store = configStore()
+setStore(store)
+
+export default class extends wepy.app {
+  config = {
+    pages: [
+      'pages/message',
+      'pages/contact',
+      'pages/discovery',
+      'pages/me',
+      'pages/chat'
+    ],
+    window: {
+      navigationBarBackgroundColor: '#444',
+      navigationBarTitleText: 'WeChat',
+      navigationBarTextStyle: '#fff',
+      backgroundColor: '#eee',
+      backgroundTextStyle: 'light'
+    },
+    tabBar: {
+      color: '#7b7b7b',
+      borderStyle: 'black',
+      selectedColor: '#13b113',
+      backgroundColor: '#f7f7f7',
+      list: [
+        {pagePath: 'pages/message', text: '微信', iconPath: 'images/message.png', selectedIconPath: 'images/message_active.png'},
+        {pagePath: 'pages/contact', text: '通讯录', iconPath: 'images/contact.png', selectedIconPath: 'images/contact_active.png'},
+        {pagePath: 'pages/discovery', text: '发现', iconPath: 'images/discovery.png', selectedIconPath: 'images/discovery_active.png'},
+        {pagePath: 'pages/me', text: '我', iconPath: 'images/me.png', selectedIconPath: 'images/me_active.png'}
+      ]
+    }
+  }
+
+  globalData = {
+    userInfo: null
+  }
+  constructor () {
+    super()
+    this.use('requestfix')
+  }
+  onLaunch() {
+    this.getUserInfo()
+  }
+  getUserInfo(cb) {
+    const that = this
+    if (this.globalData.userInfo) {
+      return this.globalData.userInfo
+    }
+    wepy.getUserInfo({
+      success (res) {
+        that.globalData.userInfo = res.userInfo
+        cb && cb(res.userInfo)
+      }
+    })
+  }
+}
+</script>

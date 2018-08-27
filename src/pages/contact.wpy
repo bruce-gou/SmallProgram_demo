@@ -1,0 +1,116 @@
+<style lang="less">
+  .body{
+    background-color: #f0eff5;
+  }
+  .list{
+    position: relative;
+    display: flex;
+    background: #fff;
+    align-items: center;
+    padding: 15rpx 15rpx 12rpx 0rpx;
+  }
+  .list image{
+    width: 70rpx;
+    height: 70rpx;
+    border-radius: 10rpx;
+  }
+  .list text{
+    flex: 1;
+    padding-left: 20rpx;
+    font-size: 32rpx;
+  }
+  .border{
+    border-bottom: 1px solid #eee;
+  }
+  .marginTop{
+    margin-top: 40rpx;
+  }
+  .contact_head{
+    background: #fff;
+    padding-left: 26rpx;
+  }
+  .contact_head image{
+    border-radius: 10rpx;
+  }
+  .classification>view{
+    padding-left: 26rpx;
+    background-color: #fff;
+  }
+  .classification>text{
+    font-size: 26rpx;
+    color: #999;
+    margin: 8rpx 0 8rpx 26rpx;
+  }
+</style>
+<template>
+  <view class="body">
+    <view class="contact_head">
+      <view class="list border">
+        <image src="../images/new_friend.png"/>
+        <Text>新的朋友</Text>
+      </view>
+      <view class="list border">
+        <image src="../images/group_chat.png"/>
+        <Text>群聊</Text>
+      </view>
+      <view class="list border">
+        <image src="../images/tag.png"/>
+        <Text>标签</Text>
+      </view>
+      <view class="list">
+        <image src="../images/public.png"/>
+        <Text>公众号</Text>
+      </view>
+    </view>
+    <view class="contact_content">
+      <view class="classification" wx:for="{{list}}" wx:key="index" wx:for-item="item">
+        <Text >{{item.id}}</Text>
+        <view>
+          <view @tap="pageTap('{{items}}')" class="list {{index < item.data.length - 1 ? 'border' : ''}}" wx:for="{{item.data}}" wx:key="index" wx:for-item="items">
+            <image src="{{items.icon}}"/>
+            <Text>{{items.name}}</Text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+</template>
+<script>
+  import wepy from 'wepy'
+  import contact from '../mocks/contact.js'
+  export default class Index extends wepy.page {
+    config = {
+      navigationBarTitleText: '通讯录'
+    }
+    components = {
+    }
+    data = {
+      list: []
+    }
+    computed = {
+    }
+    methods = {
+      pageTap (item) {
+        this.$navigate({url: `../pages/chat?name=${item.name}&namePY=${item.id}`})
+      }
+    }
+    onLoad () {
+      let arr = []
+      let array = []
+      for (let i in contact) {
+        let name = contact[i].id[0].toUpperCase()
+        if (arr.indexOf(name) < 0) {
+          arr.push(name)
+          array.push({id: name, data: [contact[i]]})
+        } else {
+          for (let j in array) {
+            if (array[j].id === name) {
+              array[j].data.push(contact[i])
+            }
+          }
+        }
+      }
+      this.list = array
+    }
+  }
+</script>
